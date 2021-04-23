@@ -331,6 +331,7 @@ void AccessibilityHandler::takeFocus()
 #if ! (JUCE_MAC || JUCE_WINDOWS)
 class AccessibilityHandler::AccessibilityNativeImpl { public: AccessibilityNativeImpl (AccessibilityHandler&) {} };
 void AccessibilityHandler::notifyAccessibilityEvent (AccessibilityEvent) const {}
+void AccessibilityHandler::postAnnouncement (const String&, AnnouncementPriority) {}
 AccessibilityNativeHandle* AccessibilityHandler::getNativeImplementation() const { return nullptr; }
 AccessibilityHandler::AccessibilityNativeImpl* AccessibilityHandler::createNativeImpl (AccessibilityHandler&) { return nullptr; }
 void AccessibilityHandler::DestroyNativeImpl::operator() (AccessibilityHandler::AccessibilityNativeImpl*) const noexcept {}

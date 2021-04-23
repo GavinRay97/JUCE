@@ -151,6 +151,51 @@ void AccessibilityHandler::notifyAccessibilityEvent (AccessibilityEvent eventTyp
         sendAccessibilityEvent (*this, event);
 }
 
+struct SpVoiceWrapper  : public DeletedAtShutdown
+{
+    SpVoiceWrapper()
+    {
+        auto hr = voice.CoCreateInstance (CLSID_SpVoice);
+
+        jassert (SUCCEEDED (hr));
+        ignoreUnused (hr);
+    }
+
+    ~SpVoiceWrapper() override
+    {
+        clearSingletonInstance();
+    }
+
+    ComSmartPtr<ISpVoice> voice;
+
+    JUCE_DECLARE_SINGLETON (SpVoiceWrapper, false)
+};
+
+JUCE_IMPLEMENT_SINGLETON (SpVoiceWrapper)
+
+
+void AccessibilityHandler::postAnnouncement (const String& announcementString, AnnouncementPriority priority)
+{
+    if (auto* sharedVoice = SpVoiceWrapper::getInstance())
+    {
+        auto voicePriority = [priority]
+        {
+            switch (priority)
+            {
+                case AnnouncementPriority::low:    return SPVPRI_OVER;
+                case AnnouncementPriority::medium: return SPVPRI_NORMAL;
+                case AnnouncementPriority::high:   return SPVPRI_ALERT;
+            }
+
+            jassertfalse;
+            return SPVPRI_OVER;
+        }();
+
+        sharedVoice->voice->SetPriority (voicePriority);
+        sharedVoice->voice->Speak (announcementString.toWideCharPointer(), SPF_ASYNC, nullptr);
+    }
+}
+
 AccessibilityHandler::AccessibilityNativeImpl* AccessibilityHandler::createNativeImpl (AccessibilityHandler& handler)
 {
     return new AccessibilityHandler::AccessibilityNativeImpl (handler);

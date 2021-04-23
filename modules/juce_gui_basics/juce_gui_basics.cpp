@@ -67,6 +67,7 @@
  #include <vfw.h>
  #include <commdlg.h>
  #include <UIAutomation.h>
+ #include <sapi.h>
 
  #if JUCE_WEB_BROWSER
   #include <exdisp.h>

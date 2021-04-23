@@ -252,11 +252,34 @@ public:
     void giveAwayFocus() const;
 
     //==============================================================================
-    /** Used to send a notification to any observing accessibility clients.
+    /** Used to send a notification to any observing accessibility clients that something
+        has changed in the UI element.
 
         @see AccessibilityEvent
     */
     void notifyAccessibilityEvent (AccessibilityEvent event) const;
+
+    /** A priority level which can help an accessibility client determine how to handle
+        an announcement request.
+
+        Exactly what this controls is platform-specific but generally a low priority
+        announcement will be read when the screen reader is free, whereas a high priority
+        announcement will be read immediately, interrupting the current speech.
+    */
+    enum class AnnouncementPriority
+    {
+        low,
+        medium,
+        high
+    };
+
+    /** Requests an announcement to be made to the user.
+
+        The announcementString should be a localised string containing the announcement
+        to be read out and priority should be set to the appropriate priority level for the
+        announcement.
+    */
+    static void postAnnouncement (const String& announcementString, AnnouncementPriority priority);
 
     //==============================================================================
     /** @internal */

@@ -875,15 +875,11 @@ AccessibilityNativeHandle* AccessibilityHandler::getNativeImplementation() const
     return (AccessibilityNativeHandle*) nativeImpl->getAccessibilityElement();
 }
 
-static void sendAccessibilityEvent (const AccessibilityHandler& handler, NSAccessibilityNotificationName notification)
+static void sendAccessibilityEvent (id accessibilityElement,
+                                    NSAccessibilityNotificationName notification,
+                                    NSDictionary* userInfo)
 {
     jassert (notification != NSAccessibilityNotificationName{});
-
-    id accessibilityElement = (id) handler.getNativeImplementation();
-
-    NSDictionary* userInfo = (notification == NSAccessibilityLayoutChangedNotification
-                                  ? @{ NSAccessibilityUIElementsKey: accessibilityElement }
-                                  : nil);
 
     NSAccessibilityPostNotificationWithUserInfo (accessibilityElement, notification, userInfo);
 }
@@ -905,7 +901,7 @@ void notifyAccessibilityEventInternal (const AccessibilityHandler& handler, Inte
     }();
 
     if (notification != NSAccessibilityNotificationName{})
-        sendAccessibilityEvent (handler, notification);
+        sendAccessibilityEvent ((id) handler.getNativeImplementation(), notification, nil);
 }
 
 void AccessibilityHandler::notifyAccessibilityEvent (AccessibilityEvent eventType) const
@@ -926,7 +922,39 @@ void AccessibilityHandler::notifyAccessibilityEvent (AccessibilityEvent eventTyp
     }();
 
     if (notification != NSAccessibilityNotificationName{})
-        sendAccessibilityEvent (*this, notification);
+    {
+        id accessibilityElement = (id) getNativeImplementation();
+
+        NSDictionary* userInfo = [notification, accessibilityElement]
+        {
+            return (notification == NSAccessibilityLayoutChangedNotification
+                      ? @{ NSAccessibilityUIElementsKey: accessibilityElement }
+                      : nil);
+        }();
+
+        sendAccessibilityEvent (accessibilityElement, notification, userInfo);
+    }
+}
+
+void AccessibilityHandler::postAnnouncement (const String& announcementString, AnnouncementPriority priority)
+{
+    auto nsPriority = [priority]
+    {
+        switch (priority)
+        {
+            case AnnouncementPriority::low:    return NSAccessibilityPriorityLow;
+            case AnnouncementPriority::medium: return NSAccessibilityPriorityMedium;
+            case AnnouncementPriority::high:   return NSAccessibilityPriorityHigh;
+        }
+
+        jassertfalse;
+        return NSAccessibilityPriorityLow;
+    }();
+
+    sendAccessibilityEvent ((id) [NSApp mainWindow],
+                            NSAccessibilityAnnouncementRequestedNotification,
+                            @{ NSAccessibilityAnnouncementKey: juceStringToNS (announcementString),
+                               NSAccessibilityPriorityKey:     @(nsPriority) });
 }
 
 AccessibilityHandler::AccessibilityNativeImpl* AccessibilityHandler::createNativeImpl (AccessibilityHandler& handler)
