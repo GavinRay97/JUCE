@@ -56,6 +56,7 @@ AccessibilityHandler::AccessibilityHandler (Component& comp,
                                             AccessibilityActions accessibilityActions,
                                             Interfaces interfacesIn)
     : component (comp),
+      typeIndex (typeid (component)),
       role (accessibilityRole),
       actions (std::move (accessibilityActions)),
       interfaces (std::move (interfacesIn)),

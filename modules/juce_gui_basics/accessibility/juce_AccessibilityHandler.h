@@ -261,6 +261,8 @@ public:
     //==============================================================================
     /** @internal */
     AccessibilityNativeHandle* getNativeImplementation() const;
+    /** @internal */
+    const std::type_index& getTypeIndex() const  { return typeIndex; }
 
 private:
     //==============================================================================
@@ -275,6 +277,7 @@ private:
 
     //==============================================================================
     Component& component;
+    std::type_index typeIndex;
 
     const AccessibilityRole role;
     AccessibilityActions actions;

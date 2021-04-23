@@ -3116,8 +3116,11 @@ AccessibilityHandler* Component::getAccessibilityHandler()
     if (flags.accessibilityIgnoredFlag)
         return nullptr;
 
-    if (accessibilityHandler == nullptr)
+    if (accessibilityHandler == nullptr
+        || accessibilityHandler->getTypeIndex() != std::type_index (typeid (*this)))
+    {
         accessibilityHandler = createAccessibilityHandler();
+    }
 
     return accessibilityHandler.get();
 }
