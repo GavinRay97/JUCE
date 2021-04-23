@@ -39,6 +39,18 @@ enum class InternalAccessibilityEvent
 
 void notifyAccessibilityEventInternal (const AccessibilityHandler& handler, InternalAccessibilityEvent event);
 
+inline String getAccessibleApplicationOrPluginName()
+{
+   #if defined (JucePlugin_Name)
+    return JucePlugin_Name;
+   #else
+    if (auto* app = JUCEApplicationBase::getInstance())
+        return app->getApplicationName();
+
+    return "JUCE Application";
+   #endif
+}
+
 AccessibilityHandler::AccessibilityHandler (Component& comp,
                                             AccessibilityRole accessibilityRole,
                                             AccessibilityActions accessibilityActions,

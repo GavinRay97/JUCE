@@ -532,8 +532,7 @@ String AccessibilityNativeHandle::getElementName() const
     auto name = accessibilityHandler.getTitle();
 
     if (name.isEmpty() && isFragmentRoot())
-        if (auto* app = JUCEApplicationBase::getInstance())
-            return app->getApplicationName();
+        return getAccessibleApplicationOrPluginName();
 
     return name;
 }

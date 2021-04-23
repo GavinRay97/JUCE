@@ -145,8 +145,6 @@ public:
             if ([window respondsToSelector: @selector (setRestorable:)])
                 [window setRestorable: NO];
 
-            [window setAccessibilityLabel: juceStringToNS (JUCEApplicationBase::getInstance()->getApplicationName())];
-
            #if defined (MAC_OS_X_VERSION_10_13) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13)
             if ([window respondsToSelector: @selector (setTabbingMode:)])
                 [window setTabbingMode: NSWindowTabbingModeDisallowed];
@@ -2135,6 +2133,7 @@ struct JuceNSWindowClass   : public ObjCClass<NSWindow>
         addMethod (@selector (window:shouldPopUpDocumentPathMenu:), shouldPopUpPathMenu, "B@:@", @encode (NSMenu*));
         addMethod (@selector (isFlipped),                           isFlipped,                 "c@:");
 
+        addMethod (@selector (accessibilityLabel),                  getAccessibilityLabel,     "@@:");
         addMethod (@selector (accessibilityTopLevelUIElement),      getAccessibilityWindow,    "@@:");
         addMethod (@selector (accessibilityWindow),                 getAccessibilityWindow,    "@@:");
 
@@ -2290,6 +2289,11 @@ private:
             return owner->windowRepresentsFile;
 
         return false;
+    }
+
+    static NSString* getAccessibilityLabel (id, SEL)
+    {
+        return juceStringToNS (getAccessibleApplicationOrPluginName());
     }
 
     static id getAccessibilityWindow (id self, SEL)
