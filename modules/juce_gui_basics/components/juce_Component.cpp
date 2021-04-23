@@ -1644,9 +1644,6 @@ void Component::internalHierarchyChanged()
     if (checker.shouldBailOut())
         return;
 
-    if (auto* handler = getAccessibilityHandler())
-        handler->notifyAccessibilityEvent (AccessibilityEvent::structureChanged);
-
     for (int i = childComponentList.size(); --i >= 0;)
     {
         childComponentList.getUnchecked (i)->internalHierarchyChanged();
@@ -1661,6 +1658,10 @@ void Component::internalHierarchyChanged()
 
         i = jmin (i, childComponentList.size());
     }
+
+    if (flags.hasHeavyweightPeerFlag)
+        if (auto* handler = getAccessibilityHandler())
+            handler->notifyAccessibilityEvent (AccessibilityEvent::structureChanged);
 }
 
 //==============================================================================
@@ -1700,6 +1701,9 @@ void Component::enterModalState (bool shouldTakeKeyboardFocus,
 
         if (shouldTakeKeyboardFocus)
             grabKeyboardFocus();
+
+        if (auto* handler = getAccessibilityHandler())
+            handler->grabFocus();
     }
     else
     {
