@@ -47,6 +47,10 @@ AlertWindow::AlertWindow (const String& title,
 {
     setAlwaysOnTop (juce_areThereAnyAlwaysOnTopWindows());
 
+    accessibleMessageLabel.setColour (Label::textColourId, Colours::transparentBlack);
+    addAndMakeVisible (accessibleMessageLabel);
+    accessibleMessageLabel.setWantsKeyboardFocus (true);
+
     if (message.isEmpty())
         text = " "; // to force an update if the message is empty
 
@@ -84,6 +88,7 @@ void AlertWindow::setMessage (const String& message)
     if (text != newMessage)
     {
         text = newMessage;
+        accessibleMessageLabel.setText (text, NotificationType::dontSendNotification);
         updateLayout (true);
         repaint();
     }
@@ -435,6 +440,7 @@ void AlertWindow::updateLayout (const bool onlyIncreaseSize)
         setBounds (getBounds().withSizeKeepingCentre (w, h));
 
     textArea.setBounds (edgeGap, edgeGap, w - (edgeGap * 2), h - edgeGap);
+    accessibleMessageLabel.setBounds (textArea);
 
     const int spacer = 16;
     int totalWidth = -spacer;
@@ -705,6 +711,12 @@ bool AlertWindow::showNativeDialogBox (const String& title,
 #endif
 
 //==============================================================================
+void AlertWindow::visibilityChanged()
+{
+    if (isVisible())
+        accessibleMessageLabel.grabKeyboardFocus();
+}
+
 std::unique_ptr<AccessibilityHandler> AlertWindow::createAccessibilityHandler()
 {
     return std::make_unique<AccessibilityHandler> (*this, AccessibilityRole::dialogWindow);

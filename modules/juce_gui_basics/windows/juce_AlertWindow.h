@@ -463,12 +463,15 @@ protected:
     /** @internal */
     float getDesktopScaleFactor() const override { return desktopScale; }
     /** @internal */
+    void visibilityChanged() override;
+    /** @internal */
     std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
 
 private:
     //==============================================================================
     String text;
     TextLayout textLayout;
+    Label accessibleMessageLabel;
     AlertIconType alertIconType;
     ComponentBoundsConstrainer constrainer;
     ComponentDragger dragger;
