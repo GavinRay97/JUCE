@@ -23,6 +23,12 @@
   ==============================================================================
 */
 
+namespace juce
+{
+    void sendAccessibilityAutomationEvent (const AccessibilityHandler&, EVENTID);
+    void sendAccessibilityPropertyChangedEvent (const AccessibilityHandler&, PROPERTYID, VARIANT);
+}
+
 #include "juce_win32_UIAProviderBase.h"
 #include "juce_win32_UIAExpandCollapseProvider.h"
 #include "juce_win32_UIAGridItemProvider.h"

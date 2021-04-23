@@ -35,7 +35,7 @@ class JUCE_API  ButtonAccessibilityHandler  : public AccessibilityHandler
 public:
     explicit ButtonAccessibilityHandler (Button& buttonToWrap)
         : AccessibilityHandler (buttonToWrap,
-                                AccessibilityRole::button,
+                                getButtonRole (buttonToWrap),
                                 getAccessibilityActions (buttonToWrap)),
           button (buttonToWrap)
     {
@@ -59,6 +59,14 @@ public:
     String getTitle() const override  { return button.getButtonText(); }
 
 private:
+    static AccessibilityRole getButtonRole (const Button& b)
+    {
+        if (b.getRadioGroupId() != 0)     return AccessibilityRole::radioButton;
+        if (b.getClickingTogglesState())  return AccessibilityRole::toggleButton;
+
+        return AccessibilityRole::button;
+    }
+
     static AccessibilityActions getAccessibilityActions (Button& button)
     {
         auto actions = AccessibilityActions().addAction (AccessibilityActionType::press,

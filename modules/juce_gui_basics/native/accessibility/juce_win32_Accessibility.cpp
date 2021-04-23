@@ -82,10 +82,9 @@ AccessibilityNativeHandle* AccessibilityHandler::getNativeImplementation() const
     return nativeImpl->accessibilityElement;
 }
 
-static void sendAccessibilityEvent (const AccessibilityHandler& handler, EVENTID event)
+template <typename Callback>
+void getProviderWithCheckedWrapper (const AccessibilityHandler& handler, Callback&& callback)
 {
-    jassert (event != EVENTID{});
-
     if (isStartingUpOrShuttingDown() || ! isHandlerValid (handler))
         return;
 
@@ -95,20 +94,33 @@ static void sendAccessibilityEvent (const AccessibilityHandler& handler, EVENTID
             return;
 
         ComSmartPtr<IRawElementProviderSimple> provider;
+        handler.getNativeImplementation()->QueryInterface (IID_PPV_ARGS (provider.resetAndGetPointerAddress()));
 
-        if (event == UIA_StructureChangedEventId)
-        {
-            ComSmartPtr<IRawElementProviderFragmentRoot> root;
-            handler.getNativeImplementation()->get_FragmentRoot (root.resetAndGetPointerAddress());
-            root.QueryInterface (provider);
-        }
-        else
-        {
-            handler.getNativeImplementation()->QueryInterface (IID_PPV_ARGS (provider.resetAndGetPointerAddress()));
-        }
-
-        wrapper->raiseAutomationEvent (provider, event);
+        callback (wrapper, provider);
     }
+}
+
+void sendAccessibilityAutomationEvent (const AccessibilityHandler& handler, EVENTID event)
+{
+    jassert (event != EVENTID{});
+
+    getProviderWithCheckedWrapper (handler,  [event] (WindowsUIAWrapper* wrapper, ComSmartPtr<IRawElementProviderSimple>& provider)
+    {
+        wrapper->raiseAutomationEvent (provider, event);
+    });
+}
+
+void sendAccessibilityPropertyChangedEvent (const AccessibilityHandler& handler, PROPERTYID property, VARIANT newValue)
+{
+    jassert (property != PROPERTYID{});
+
+    getProviderWithCheckedWrapper (handler, [property, newValue] (WindowsUIAWrapper* wrapper, ComSmartPtr<IRawElementProviderSimple>& provider)
+    {
+        VARIANT oldValue;
+        VariantHelpers::clear (&oldValue);
+
+        wrapper->raiseAutomationPropertyChangedEvent (provider, property, oldValue, newValue);
+    });
 }
 
 void notifyAccessibilityEventInternal (const AccessibilityHandler& handler, InternalAccessibilityEvent eventType)
@@ -128,27 +140,27 @@ void notifyAccessibilityEventInternal (const AccessibilityHandler& handler, Inte
     }();
 
     if (event != EVENTID{})
-        sendAccessibilityEvent (handler, event);
+        sendAccessibilityAutomationEvent (handler, event);
 }
 
 void AccessibilityHandler::notifyAccessibilityEvent (AccessibilityEvent eventType) const
 {
-    auto event = [eventType]() -> EVENTID
+    auto event = [eventType] () -> EVENTID
     {
         switch (eventType)
         {
             case AccessibilityEvent::textSelectionChanged:  return UIA_Text_TextSelectionChangedEventId;
             case AccessibilityEvent::textChanged:           return UIA_Text_TextChangedEventId;
             case AccessibilityEvent::structureChanged:      return UIA_StructureChangedEventId;
-            case AccessibilityEvent::valueChanged:          return UIA_AutomationPropertyChangedEventId;
             case AccessibilityEvent::rowSelectionChanged:   return UIA_SelectionItem_ElementSelectedEventId;
+            case AccessibilityEvent::valueChanged:          break;
         }
 
         return {};
     }();
 
     if (event != EVENTID{})
-        sendAccessibilityEvent (*this, event);
+        sendAccessibilityAutomationEvent (*this, event);
 }
 
 struct SpVoiceWrapper  : public DeletedAtShutdown

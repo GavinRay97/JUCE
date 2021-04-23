@@ -40,7 +40,8 @@ class UIASelectionItemProvider  : public UIAProviderBase,
 {
 public:
     explicit UIASelectionItemProvider (AccessibilityNativeHandle* nativeHandle)
-        : UIAProviderBase (nativeHandle)
+        : UIAProviderBase (nativeHandle),
+          isRadioButton (getHandler().getRole() == AccessibilityRole::radioButton)
     {
     }
 
@@ -52,8 +53,16 @@ public:
 
         const auto& handler = getHandler();
 
+        if (isRadioButton)
+        {
+            handler.getActions().invoke (AccessibilityActionType::press);
+            sendAccessibilityAutomationEvent (handler, UIA_SelectionItem_ElementSelectedEventId);
+
+            return S_OK;
+        }
+
         if (! handler.getCurrentState().isSelected())
-            handler.getActions().invoke (AccessibilityActionType::toggle);
+            handler.getActions().invoke (AccessibilityActionType::focus);
 
         return S_OK;
     }
@@ -62,7 +71,8 @@ public:
     {
         return withCheckedComArgs (pRetVal, *this, [&]
         {
-            *pRetVal = getHandler().getCurrentState().isSelected();
+            const auto state = getHandler().getCurrentState();
+            *pRetVal = isRadioButton ? state.isChecked() : state.isSelected();
             return S_OK;
         });
     }
@@ -71,8 +81,8 @@ public:
     {
         return withCheckedComArgs (pRetVal, *this, [&]
         {
-            if (auto* parent = getHandler().getParent())
-                if (parent->getRole() == AccessibilityRole::list)
+            if (! isRadioButton)
+                if (auto* parent = getHandler().getParent())
                     parent->getNativeImplementation()->QueryInterface (IID_PPV_ARGS (pRetVal));
 
             return S_OK;
@@ -84,10 +94,13 @@ public:
         if (! isElementValid())
             return UIA_E_ELEMENTNOTAVAILABLE;
 
-        const auto& handler = getHandler();
+        if (! isRadioButton)
+        {
+            const auto& handler = getHandler();
 
-        if (handler.getCurrentState().isSelected())
-            handler.getActions().invoke (AccessibilityActionType::toggle);
+            if (handler.getCurrentState().isSelected())
+                handler.giveAwayFocus();
+        }
 
         return S_OK;
     }
@@ -98,21 +111,22 @@ public:
             return UIA_E_ELEMENTNOTAVAILABLE;
 
         AddToSelection();
-        deselectAllSiblings();
+
+        if (! isRadioButton)
+        {
+            const auto& handler = getHandler();
+
+            if (auto* parent = handler.getParent())
+                for (auto* child : parent->getChildren())
+                    if (child != &handler && child->getCurrentState().isSelected())
+                        child->giveAwayFocus();
+        }
 
         return S_OK;
     }
 
 private:
-    void deselectAllSiblings() const
-    {
-        const auto& handler = getHandler();
-
-        if (auto* parent = handler.getParent())
-            for (auto* child : parent->getChildren())
-                if (child != &handler && child->getCurrentState().isSelected())
-                    child->getActions().invoke (AccessibilityActionType::toggle);
-    }
+    const bool isRadioButton;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UIASelectionItemProvider)

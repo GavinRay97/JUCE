@@ -37,10 +37,10 @@ public:
     explicit AccessibilityNativeHandle (AccessibilityHandler& handler);
 
     //==============================================================================
-    void invalidateElement() noexcept     { valid = false; }
-    bool isElementValid() const noexcept  { return valid; }
+    void invalidateElement() noexcept         { valid = false; }
+    bool isElementValid() const noexcept      { return valid; }
 
-    const AccessibilityHandler& getAccessibilityHandler()  { return accessibilityHandler; }
+    const AccessibilityHandler& getHandler()  { return accessibilityHandler; }
 
     //==============================================================================
     JUCE_COMRESULT QueryInterface (REFIID refId, void** result) override;

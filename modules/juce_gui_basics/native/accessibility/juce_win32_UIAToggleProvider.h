@@ -42,8 +42,17 @@ public:
         if (! isElementValid())
             return UIA_E_ELEMENTNOTAVAILABLE;
 
-        if (getHandler().getActions().invoke (AccessibilityActionType::toggle))
+        const auto& handler = getHandler();
+
+        if (handler.getActions().invoke (AccessibilityActionType::toggle))
+        {
+            VARIANT newValue;
+            VariantHelpers::setInt (getCurrentToggleState(), &newValue);
+
+            sendAccessibilityPropertyChangedEvent (handler, UIA_ToggleToggleStatePropertyId, newValue);
+
             return S_OK;
+        }
 
         return UIA_E_NOTSUPPORTED;
     }
@@ -52,11 +61,16 @@ public:
     {
         return withCheckedComArgs (pRetVal, *this, [&]
         {
-            *pRetVal = getHandler().getCurrentState().isChecked() ? ToggleState_On
-                                                                  : ToggleState_Off;
-
+            *pRetVal = getCurrentToggleState();
             return S_OK;
         });
+    }
+
+private:
+    ToggleState getCurrentToggleState() const
+    {
+        return getHandler().getCurrentState().isChecked() ? ToggleState_On
+                                                          : ToggleState_Off;
     }
 
     //==============================================================================

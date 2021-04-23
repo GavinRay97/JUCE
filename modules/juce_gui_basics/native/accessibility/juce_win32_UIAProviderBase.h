@@ -30,26 +30,26 @@ namespace juce
 class UIAProviderBase
 {
 public:
-    explicit UIAProviderBase (AccessibilityNativeHandle* nativeHandle)
-        : handle (nativeHandle)
+    explicit UIAProviderBase (AccessibilityNativeHandle* nativeHandleIn)
+        : nativeHandle (nativeHandleIn)
     {
     }
 
     bool isElementValid() const
     {
-        if (handle != nullptr)
-            return handle->isElementValid();
+        if (nativeHandle != nullptr)
+            return nativeHandle->isElementValid();
 
         return false;
     }
 
     const AccessibilityHandler& getHandler() const
     {
-        return handle->getAccessibilityHandler();
+        return nativeHandle->getHandler();
     }
 
 private:
-    ComSmartPtr<AccessibilityNativeHandle> handle;
+    ComSmartPtr<AccessibilityNativeHandle> nativeHandle;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UIAProviderBase)

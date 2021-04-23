@@ -188,6 +188,9 @@ void Button::setToggleState (bool shouldBeOn, NotificationType clickNotification
             sendStateMessage();
         else
             buttonStateChanged();
+
+        if (auto* handler = getAccessibilityHandler())
+            handler->notifyAccessibilityEvent (AccessibilityEvent::valueChanged);
     }
 }
 
@@ -222,6 +225,8 @@ void Button::setRadioGroupId (int newGroupId, NotificationType notification)
 
         if (lastToggleState)
             turnOffOtherButtonsInGroup (notification, notification);
+
+        invalidateAccessibilityHandler();
     }
 }
 

@@ -136,7 +136,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
     {
         *pRetVal = [&]() -> IUnknown*
         {
-            auto role = accessibilityHandler.getRole();
+            const auto role = accessibilityHandler.getRole();
             const auto fragmentRoot = isFragmentRoot();
 
             switch (pId)
@@ -187,21 +187,24 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
                 {
                     if (accessibilityHandler.getActions().contains (AccessibilityActionType::toggle)
                         && accessibilityHandler.getCurrentState().isCheckable())
+                    {
                         return new UIAToggleProvider (this);
+                    }
 
                     break;
                 }
                 case UIA_SelectionPatternId:
                 {
-                    if (role == AccessibilityRole::list)
+                    if (role == AccessibilityRole::list || role == AccessibilityRole::popupMenu)
                         return new UIASelectionProvider (this);
 
                     break;
                 }
                 case UIA_SelectionItemPatternId:
                 {
-                    if (role == AccessibilityRole::listItem
+                    if (((role == AccessibilityRole::listItem || role == AccessibilityRole::menuItem)
                         && accessibilityHandler.getCurrentState().isSelectable())
+                        || role == AccessibilityRole::radioButton)
                     {
                         return new UIASelectionItemProvider (this);
                     }

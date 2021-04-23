@@ -395,6 +395,9 @@ private:
                     return juceStringToNS (textInterface->getText ({ 0, textInterface->getTotalNumCharacters() }));
                 }
 
+                if (handler->getCurrentState().isCheckable())
+                    return handler->getCurrentState().isChecked() ? @(1) : @(0);
+
                 if (auto* valueInterface = handler->getValueInterface())
                     return juceStringToNS (valueInterface->getCurrentValueAsString());
             }
@@ -814,7 +817,8 @@ private:
                     if (selector == @selector (accessibilityValue))
                         return valueInterface != nullptr
                             || hasEditableText (*handler)
-                            || nameIsAccessibilityValue (handler->getRole());
+                            || nameIsAccessibilityValue (handler->getRole())
+                            || handler->getCurrentState().isCheckable();
 
                     auto hasEditableValue = [valueInterface] { return valueInterface != nullptr && ! valueInterface->isReadOnly(); };
 
