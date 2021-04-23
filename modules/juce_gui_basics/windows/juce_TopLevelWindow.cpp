@@ -134,6 +134,8 @@ void juce_checkCurrentlyFocusedTopLevelWindow()
 TopLevelWindow::TopLevelWindow (const String& name, const bool shouldAddToDesktop)
     : Component (name)
 {
+    setTitle (name);
+
     setOpaque (true);
 
     if (shouldAddToDesktop)
