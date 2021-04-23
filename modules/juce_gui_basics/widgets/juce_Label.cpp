@@ -223,7 +223,7 @@ void Label::showEditor()
     if (editor == nullptr)
     {
         editor.reset (createEditorComponent());
-        editor->setSize (1, 1);
+        editor->setSize (10, 10);
         addAndMakeVisible (editor.get());
         editor->setText (getText(), false);
         editor->setKeyboardType (keyboardType);
