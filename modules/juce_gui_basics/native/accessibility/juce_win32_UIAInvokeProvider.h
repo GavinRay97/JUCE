@@ -42,8 +42,13 @@ public:
         if (! isElementValid())
             return UIA_E_ELEMENTNOTAVAILABLE;
 
-        if (getHandler().getActions().invoke (AccessibilityActionType::press))
+        const auto& handler = getHandler();
+
+        if (handler.getActions().invoke (AccessibilityActionType::press))
+        {
+            sendAccessibilityAutomationEvent (handler, UIA_Invoke_InvokedEventId);
             return S_OK;
+        }
 
         return UIA_E_NOTSUPPORTED;
     }

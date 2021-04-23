@@ -42,7 +42,9 @@ public:
         if (! isElementValid())
             return UIA_E_ELEMENTNOTAVAILABLE;
 
-        if (auto* valueInterface = getHandler().getValueInterface())
+        const auto& handler = getHandler();
+
+        if (auto* valueInterface = handler.getValueInterface())
         {
             auto range = valueInterface->getRange();
 
@@ -54,6 +56,11 @@ public:
                 if (! valueInterface->isReadOnly())
                 {
                     valueInterface->setValue (val);
+
+                    VARIANT newValue;
+                    VariantHelpers::setDouble (valueInterface->getCurrentValue(), &newValue);
+                    sendAccessibilityPropertyChangedEvent (handler, UIA_RangeValueValuePropertyId, newValue);
+
                     return S_OK;
                 }
             }

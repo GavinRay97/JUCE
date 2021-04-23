@@ -87,6 +87,12 @@ static long roleToControlTypeId (AccessibilityRole roleType)
     return UIA_CustomControlTypeId;
 }
 
+static bool isEditableText (const AccessibilityHandler& handler)
+{
+    return handler.getRole() == AccessibilityRole::editableText
+          && handler.getTextInterface() != nullptr;
+}
+
 //==============================================================================
 AccessibilityNativeHandle::AccessibilityNativeHandle (AccessibilityHandler& handler)
     : ComBaseClassHelper (0),
@@ -165,11 +171,10 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
                 }
                 case UIA_ValuePatternId:
                 {
-                    auto isEditableText = (role == AccessibilityRole::editableText
-                                           && accessibilityHandler.getTextInterface() != nullptr);
+                    auto editableText = isEditableText (accessibilityHandler);
 
-                    if (accessibilityHandler.getValueInterface() != nullptr || isEditableText)
-                        return new UIAValueProvider (this, isEditableText);
+                    if (accessibilityHandler.getValueInterface() != nullptr || editableText)
+                        return new UIAValueProvider (this, editableText);
 
                     break;
                 }
@@ -270,8 +275,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPropertyValue (PROPERTYID propertyI
                 VariantHelpers::setString (getAutomationId (accessibilityHandler), pRetVal);
                 break;
             case UIA_ControlTypePropertyId:
-                VariantHelpers::setInt (fragmentRoot ? UIA_WindowControlTypeId
-                                                     : roleToControlTypeId (accessibilityHandler.getRole()),
+                VariantHelpers::setInt (roleToControlTypeId (accessibilityHandler.getRole()),
                                         pRetVal);
                 break;
             case UIA_FrameworkIdPropertyId:
@@ -299,7 +303,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPropertyValue (PROPERTYID propertyI
                 VariantHelpers::setBool (accessibilityHandler.getCurrentState().isFocusable(), pRetVal);
                 break;
             case UIA_HasKeyboardFocusPropertyId:
-                VariantHelpers::setBool (fragmentRoot || accessibilityHandler.getCurrentState().isFocused(), pRetVal);
+                VariantHelpers::setBool (accessibilityHandler.hasFocus (true), pRetVal);
                 break;
             case UIA_IsOffscreenPropertyId:
                 VariantHelpers::setBool (false, pRetVal);
@@ -497,7 +501,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetFocus (IRawElementProviderFragment*
 {
     return withCheckedComArgs (pRetVal, *this, [&]
     {
-        const auto getFocusHandler = [this]
+        const auto getFocusHandler = [this]() -> AccessibilityHandler*
         {
             if (auto* modal = Component::getCurrentlyModalComponent())
             {
@@ -519,7 +523,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetFocus (IRawElementProviderFragment*
             if (auto* focusChild = accessibilityHandler.getChildFocus())
                 return focusChild;
 
-            return &accessibilityHandler;
+            return nullptr;
         };
 
         if (auto* focusHandler = getFocusHandler())

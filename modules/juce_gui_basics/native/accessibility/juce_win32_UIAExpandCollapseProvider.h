@@ -65,8 +65,16 @@ private:
         if (! isElementValid())
             return UIA_E_ELEMENTNOTAVAILABLE;
 
-        if (getHandler().getActions().invoke (AccessibilityActionType::showMenu))
+        const auto& handler = getHandler();
+
+        if (handler.getActions().invoke (AccessibilityActionType::showMenu))
+        {
+            sendAccessibilityAutomationEvent (handler, handler.getCurrentState().isExpanded()
+                                                           ? UIA_MenuOpenedEventId
+                                                           : UIA_MenuClosedEventId);
+
             return S_OK;
+        }
 
         return UIA_E_NOTSUPPORTED;
     }

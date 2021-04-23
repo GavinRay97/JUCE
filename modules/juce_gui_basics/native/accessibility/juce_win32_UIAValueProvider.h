@@ -43,17 +43,31 @@ public:
         if (! isElementValid())
             return UIA_E_ELEMENTNOTAVAILABLE;
 
+        const auto& handler = getHandler();
+
+        const auto sendValuePropertyChangeMessage = [&]()
+        {
+            VARIANT newValue;
+            VariantHelpers::setString (getCurrentValueString(), &newValue);
+
+            sendAccessibilityPropertyChangedEvent (handler, UIA_ValueValuePropertyId, newValue);
+        };
+
         if (isEditableText)
         {
-            getHandler().getTextInterface()->setText (String (val));
+            handler.getTextInterface()->setText (String (val));
+            sendValuePropertyChangeMessage();
+
             return S_OK;
         }
 
-        if (auto* valueInterface = getHandler().getValueInterface())
+        if (auto* valueInterface = handler.getValueInterface())
         {
             if (! valueInterface->isReadOnly())
             {
                 valueInterface->setValueAsString (String (val));
+                sendValuePropertyChangeMessage();
+
                 return S_OK;
             }
         }
@@ -65,21 +79,9 @@ public:
     {
         return withCheckedComArgs (pRetVal, *this, [&]
         {
-            auto currentValueString = [this]() -> String
-            {
-                if (isEditableText)
-                {
-                    if (auto* textInterface = getHandler().getTextInterface())
-                        return textInterface->getText ({ 0, textInterface->getTotalNumCharacters() });
-                }
+            auto currentValue = getCurrentValueString();
 
-                if (auto* valueInterface = getHandler().getValueInterface())
-                    return valueInterface->getCurrentValueAsString();
-
-                return {};
-            }();
-
-            *pRetVal = SysAllocString ((const OLECHAR*) currentValueString.toWideCharPointer());
+            *pRetVal = SysAllocString ((const OLECHAR*) currentValue.toWideCharPointer());
             return S_OK;
         });
     }
@@ -97,6 +99,19 @@ public:
     }
 
 private:
+    String getCurrentValueString() const
+    {
+        if (isEditableText)
+            if (auto* textInterface = getHandler().getTextInterface())
+                return textInterface->getText ({ 0, textInterface->getTotalNumCharacters() });
+
+        if (auto* valueInterface = getHandler().getValueInterface())
+            return valueInterface->getCurrentValueAsString();
+
+        jassertfalse;
+        return {};
+    }
+
     const bool isEditableText;
 
     //==============================================================================

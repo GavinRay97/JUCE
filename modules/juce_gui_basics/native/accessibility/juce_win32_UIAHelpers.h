@@ -50,6 +50,12 @@ namespace VariantHelpers
         variant->vt      = VT_BSTR;
         variant->bstrVal = SysAllocString ((const OLECHAR*) value.toWideCharPointer());
     }
+
+    inline void setDouble (double value, VARIANT* variant)
+    {
+        variant->vt     = VT_R8;
+        variant->dblVal = value;
+    }
 }
 
 JUCE_COMRESULT addHandlersToArray (const std::vector<const AccessibilityHandler*>& handlers, SAFEARRAY** pRetVal)
