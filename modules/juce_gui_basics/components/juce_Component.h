@@ -2306,6 +2306,22 @@ public:
     bool getViewportIgnoreDragFlag() const noexcept                     { return flags.viewportIgnoreDragFlag; }
 
     //==============================================================================
+    /** Returns the title text for this component.
+
+        @see setTitle
+    */
+    const String& getTitle() const noexcept  { return componentTitle; }
+
+    /** Sets the title for this component.
+
+        If this component supports accessibility using the default AccessibilityHandler
+        implementation, this string will be passed to accessibility clients requesting a
+        title and may be read out by a screen reader.
+
+        @see getTitle, getAccessibilityHandler
+    */
+    void setTitle (const String& newTitle);
+
     /** Returns the description for this component.
 
         @see setDescription
@@ -2392,7 +2408,7 @@ private:
     static Component* currentlyFocusedComponent;
 
     //==============================================================================
-    String componentName, componentID, componentDescription, componentHelpText;
+    String componentName, componentID, componentTitle, componentDescription, componentHelpText;
     Component* parentComponent = nullptr;
     Rectangle<int> boundsRelativeToParent;
     std::unique_ptr<Positioner> positioner;

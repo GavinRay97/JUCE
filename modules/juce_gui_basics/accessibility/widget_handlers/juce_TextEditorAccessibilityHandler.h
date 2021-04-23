@@ -44,7 +44,7 @@ public:
 
     String getTitle() const override
     {
-        return textEditor.isReadOnly() ? textEditor.getText() : textEditor.getName();
+        return textEditor.isReadOnly() ? textEditor.getText() : textEditor.getTitle();
     }
 
 private:

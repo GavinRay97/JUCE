@@ -113,7 +113,7 @@ public:
         the visible title of the UI element (if any). For example, this might be the
         text of a button or a simple label.
 
-        The default implementation will call `Component::getName()`, but you can override
+        The default implementation will call `Component::getTitle()`, but you can override
         this to return a different string if required.
 
         If neither a name nor a description is provided then the UI element may be
@@ -121,7 +121,7 @@ public:
 
         This must be a localised string.
     */
-    virtual String getTitle() const                  { return component.getName(); }
+    virtual String getTitle() const                  { return component.getTitle(); }
 
     /** A short description of the UI element.
 

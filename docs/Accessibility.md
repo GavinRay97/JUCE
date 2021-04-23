@@ -59,7 +59,7 @@ traversal, `Component::setExplicitFocusOrder()`,
 used to override the default parent/child relationships and control the order
 of navigation between UI elements.
 
-The `Component::setName()`, `Component::setDescription()` and
+The `Component::setTitle()`, `Component::setDescription()` and
 `Component::setHelpText()` methods can be used to customise the strings that
 will be read out by accessibility clients when interacting with UI elements.
 

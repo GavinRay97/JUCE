@@ -3078,6 +3078,11 @@ bool Component::BailOutChecker::shouldBailOut() const noexcept
 }
 
 //==============================================================================
+void Component::setTitle (const String& newTitle)
+{
+    componentTitle = newTitle;
+}
+
 void Component::setDescription (const String& newDescription)
 {
     componentDescription = newDescription;
