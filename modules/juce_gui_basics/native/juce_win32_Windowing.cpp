@@ -1385,9 +1385,6 @@ public:
 
         callFunctionIfNotLocked (&createWindowCallback, this);
 
-        if (auto* handler = component.getAccessibilityHandler())
-            notifyAccessibilityEventInternal (*handler, InternalAccessibilityEvent::windowOpened);
-
         setTitle (component.getName());
         updateShadower();
 
@@ -1420,9 +1417,6 @@ public:
         currentTouches.deleteAllTouchesForPeer (this);
 
         callFunctionIfNotLocked (&destroyWindowCallback, (void*) hwnd);
-
-        if (auto* handler = component.getAccessibilityHandler())
-            notifyAccessibilityEventInternal (*handler, InternalAccessibilityEvent::windowClosed);
 
         if (currentWindowIcon != nullptr)
             DestroyIcon (currentWindowIcon);

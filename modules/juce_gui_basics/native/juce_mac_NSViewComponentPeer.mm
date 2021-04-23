@@ -234,11 +234,6 @@ public:
             {
                 [window orderOut: nil];
             }
-
-            if (auto* handler = getComponent().getAccessibilityHandler())
-                notifyAccessibilityEventInternal (*handler,
-                                                  shouldBeVisible ? InternalAccessibilityEvent::windowOpened
-                                                                  : InternalAccessibilityEvent::windowClosed);
         }
     }
 

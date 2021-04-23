@@ -704,6 +704,9 @@ void Component::addToDesktop (int styleWanted, void* nativeWindowToAttachTo)
 
             repaint();
             internalHierarchyChanged();
+
+            if (auto* handler = getAccessibilityHandler())
+                notifyAccessibilityEventInternal (*handler, InternalAccessibilityEvent::windowOpened);
         }
     }
 }
@@ -716,6 +719,9 @@ void Component::removeFromDesktop()
 
     if (flags.hasHeavyweightPeerFlag)
     {
+        if (auto* handler = getAccessibilityHandler())
+            notifyAccessibilityEventInternal (*handler, InternalAccessibilityEvent::windowClosed);
+
         ComponentHelpers::releaseAllCachedImageResources (*this);
 
         auto* peer = ComponentPeer::getPeerFor (this);
