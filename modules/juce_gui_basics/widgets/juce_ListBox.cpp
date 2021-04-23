@@ -1044,7 +1044,7 @@ Component* ListBoxModel::refreshComponentForRow (int, bool, Component* existingC
     return nullptr;
 }
 
-String ListBoxModel::getNameForRow (int rowNumber)                      { return "Row " + String (rowNumber); }
+String ListBoxModel::getNameForRow (int rowNumber)                      { return "Row " + String (rowNumber + 1); }
 void ListBoxModel::listBoxItemClicked (int, const MouseEvent&) {}
 void ListBoxModel::listBoxItemDoubleClicked (int, const MouseEvent&) {}
 void ListBoxModel::backgroundClicked (const MouseEvent&) {}
