@@ -85,6 +85,7 @@ private:
             addMethod (@selector (accessibilityChildren),                  getAccessibilityChildren,              "@@:");
             addMethod (@selector (isAccessibilityFocused),                 getIsAccessibilityFocused,             "c@:");
             addMethod (@selector (setAccessibilityFocused:),               setAccessibilityFocused,               "v@:c");
+            addMethod (@selector (isAccessibilityModal),                   getIsAccessibilityModal,               "c@:");
             addMethod (@selector (accessibilityFrame),                     getAccessibilityFrame,                 @encode (NSRect), "@:");
             addMethod (@selector (accessibilityRole),                      getAccessibilityRole,                  "@@:");
             addMethod (@selector (accessibilitySubrole),                   getAccessibilitySubrole,               "@@:");
@@ -291,6 +292,14 @@ private:
             }
         }
 
+        static BOOL getIsAccessibilityModal (id self, SEL)
+        {
+            if (auto* handler = getHandler (self))
+                return handler->getComponent().isCurrentlyModal();
+
+            return NO;
+        }
+
         static NSRect getAccessibilityFrame (id self, SEL)
         {
             if (auto* handler = getHandler (self))
@@ -346,9 +355,34 @@ private:
 
         static NSAccessibilityRole getAccessibilitySubrole (id self, SEL)
         {
-            if (auto* textInterface = getTextInterface (self))
-                if (textInterface->isDisplayingProtectedText())
-                    return NSAccessibilitySecureTextFieldSubrole;
+            if (auto* handler = getHandler (self))
+            {
+                if (auto* textInterface = getTextInterface (self))
+                    if (textInterface->isDisplayingProtectedText())
+                        return NSAccessibilitySecureTextFieldSubrole;
+
+                const auto role = handler->getRole();
+
+                if (role == AccessibilityRole::window)                                     return NSAccessibilityStandardWindowSubrole;
+                if (role == AccessibilityRole::dialogWindow)                               return NSAccessibilityDialogSubrole;
+                if (role == AccessibilityRole::tooltip
+                    || role == AccessibilityRole::splashScreen)                            return NSAccessibilityFloatingWindowSubrole;
+                if (role == AccessibilityRole::toggleButton)                               return NSAccessibilityToggleSubrole;
+                if (role == AccessibilityRole::treeItem)                                   return NSAccessibilityOutlineRowSubrole;
+                if (role == AccessibilityRole::row && getCellInterface (self) != nullptr)  return NSAccessibilityTableRowSubrole;
+
+                const auto& component = handler->getComponent();
+
+                if (auto* documentWindow = component.findParentComponentOfClass<DocumentWindow>())
+                {
+                    if (role == AccessibilityRole::button)
+                    {
+                        if (&component == documentWindow->getCloseButton())     return NSAccessibilityCloseButtonSubrole;
+                        if (&component == documentWindow->getMinimiseButton())  return NSAccessibilityMinimizeButtonSubrole;
+                        if (&component == documentWindow->getMaximiseButton())  return NSAccessibilityFullScreenButtonSubrole;
+                    }
+                }
+            }
 
             return NSAccessibilityUnknownRole;
         }

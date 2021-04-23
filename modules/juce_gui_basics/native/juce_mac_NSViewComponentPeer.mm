@@ -2131,6 +2131,8 @@ struct JuceNSWindowClass   : public ObjCClass<NSWindow>
         addMethod (@selector (accessibilityLabel),                  getAccessibilityLabel,     "@@:");
         addMethod (@selector (accessibilityTopLevelUIElement),      getAccessibilityWindow,    "@@:");
         addMethod (@selector (accessibilityWindow),                 getAccessibilityWindow,    "@@:");
+        addMethod (@selector (accessibilityRole),                   getAccessibilityRole,      "@@:");
+        addMethod (@selector (accessibilitySubrole),                getAccessibilitySubrole,   "@@:");
 
         addMethod (@selector (window:shouldDragDocumentWithEvent:from:withPasteboard:),
                    shouldAllowIconDrag, "B@:@", @encode (NSEvent*), @encode (NSPoint), @encode (NSPasteboard*));
@@ -2294,6 +2296,20 @@ private:
     static id getAccessibilityWindow (id self, SEL)
     {
         return self;
+    }
+
+    static NSAccessibilityRole getAccessibilityRole (id, SEL)
+    {
+        return NSAccessibilityWindowRole;
+    }
+
+    static NSAccessibilityRole getAccessibilitySubrole (id self, SEL)
+    {
+        if (auto* owner = getOwner (self))
+            if (auto* handler = owner->getComponent().getAccessibilityHandler())
+                return [(id) handler->getNativeImplementation() accessibilitySubrole];
+
+        return NSAccessibilityStandardWindowSubrole;
     }
 };
 
