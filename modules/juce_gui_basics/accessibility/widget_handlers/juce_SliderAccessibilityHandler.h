@@ -42,7 +42,7 @@ public:
     }
 
 private:
-    class SliderValueInterface  : public AccessibilityRangedNumericValueInterface
+    class SliderValueInterface  : public AccessibilityValueInterface
     {
     public:
         explicit SliderValueInterface (Slider& sliderToWrap)
@@ -63,6 +63,16 @@ private:
                 slider.setMaxValue (newValue, sendNotification);
             else
                 slider.setValue (newValue, sendNotification);
+        }
+
+        String getCurrentValueAsString() const override
+        {
+            return slider.getTextFromValue (getCurrentValue());
+        }
+
+        void setValueAsString (const String& newValue) override
+        {
+            setValue (slider.getValueFromText (newValue));
         }
 
         AccessibleValueRange getRange() const override
