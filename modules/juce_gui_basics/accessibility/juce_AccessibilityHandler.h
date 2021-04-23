@@ -249,7 +249,7 @@ public:
 
         @see hasFocus, grabFocus
     */
-    void giveAwayFocus();
+    void giveAwayFocus() const;
 
     //==============================================================================
     /** Used to send a notification to any observing accessibility clients.
@@ -270,7 +270,7 @@ private:
 
     //==============================================================================
     void grabFocusInternal (bool);
-    void giveAwayFocusInternal();
+    void giveAwayFocusInternal() const;
     void takeFocus();
 
     static AccessibilityHandler* currentlyFocusedHandler;
