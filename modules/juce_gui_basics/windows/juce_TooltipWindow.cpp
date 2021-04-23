@@ -117,6 +117,11 @@ void TooltipWindow::displayTip (Point<int> screenPos, const String& tip)
        #endif
 
         toFront (false);
+
+        setTitle (tip);
+
+        if (auto* handler = getAccessibilityHandler())
+            handler->grabFocus();
     }
 }
 
@@ -137,6 +142,9 @@ void TooltipWindow::hideTip()
 {
     if (! reentrant)
     {
+        if (auto* handler = getAccessibilityHandler())
+            handler->giveAwayFocus();
+
         tipShowing.clear();
         removeFromDesktop();
         setVisible (false);
