@@ -54,6 +54,7 @@ public:
     explicit AccessibilityNativeImpl (AccessibilityHandler& owner)
         : accessibilityElement (new AccessibilityNativeHandle (owner))
     {
+        ++providerCount;
     }
 
     ~AccessibilityNativeImpl()
@@ -66,15 +67,21 @@ public:
             accessibilityElement->QueryInterface (IID_PPV_ARGS (provider.resetAndGetPointerAddress()));
 
             wrapper->disconnectProvider (provider);
+
+            if (--providerCount == 0)
+                wrapper->disconnectAllProviders();
         }
     }
 
     //==============================================================================
     ComSmartPtr<AccessibilityNativeHandle> accessibilityElement;
+    static int providerCount;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AccessibilityNativeImpl)
 };
+
+int AccessibilityHandler::AccessibilityNativeImpl::providerCount = 0;
 
 //==============================================================================
 AccessibilityNativeHandle* AccessibilityHandler::getNativeImplementation() const
@@ -253,10 +260,7 @@ namespace WindowsAccessibility
     void revokeUIAMapEntriesForWindow (HWND hwnd)
     {
         if (auto* wrapper = WindowsUIAWrapper::getInstanceWithoutCreating())
-        {
             wrapper->returnRawElementProvider (hwnd, 0, 0, nullptr);
-            wrapper->disconnectAllProviders();
-        }
     }
 }
 
