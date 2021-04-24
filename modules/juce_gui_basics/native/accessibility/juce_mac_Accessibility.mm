@@ -226,8 +226,6 @@ private:
 
                 if (auto* focusChild = handler->getChildFocus())
                     return (id) focusChild->getNativeImplementation();
-
-                return self;
             }
 
             return nil;
