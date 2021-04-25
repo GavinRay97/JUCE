@@ -49,7 +49,6 @@ AlertWindow::AlertWindow (const String& title,
 
     accessibleMessageLabel.setColour (Label::textColourId, Colours::transparentBlack);
     addAndMakeVisible (accessibleMessageLabel);
-    accessibleMessageLabel.setWantsKeyboardFocus (true);
 
     if (message.isEmpty())
         text = " "; // to force an update if the message is empty
@@ -714,7 +713,8 @@ bool AlertWindow::showNativeDialogBox (const String& title,
 void AlertWindow::visibilityChanged()
 {
     if (isVisible())
-        accessibleMessageLabel.grabKeyboardFocus();
+        if (auto* handler = accessibleMessageLabel.getAccessibilityHandler())
+            handler->grabFocus();
 }
 
 std::unique_ptr<AccessibilityHandler> AlertWindow::createAccessibilityHandler()
