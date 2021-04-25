@@ -87,7 +87,7 @@ void AlertWindow::setMessage (const String& message)
     if (text != newMessage)
     {
         text = newMessage;
-        accessibleMessageLabel.setText (text, NotificationType::dontSendNotification);
+        accessibleMessageLabel.setText (getName() + ". " + text, NotificationType::dontSendNotification);
         updateLayout (true);
         repaint();
     }
@@ -110,6 +110,7 @@ void AlertWindow::addButton (const String& name,
     buttons.add (b);
 
     b->setWantsKeyboardFocus (true);
+    b->setExplicitFocusOrder (1);
     b->setMouseClickGrabsKeyboardFocus (false);
     b->setCommandToTrigger (nullptr, returnValue, false);
     b->addShortcut (shortcutKey1);
@@ -713,8 +714,15 @@ bool AlertWindow::showNativeDialogBox (const String& title,
 void AlertWindow::visibilityChanged()
 {
     if (isVisible())
-        if (auto* handler = accessibleMessageLabel.getAccessibilityHandler())
-            handler->grabFocus();
+    {
+        auto announcementString = accessibleMessageLabel.getText();
+
+        MessageManager::callAsync ([announcementString]
+        {
+            AccessibilityHandler::postAnnouncement (announcementString,
+                                                    AccessibilityHandler::AnnouncementPriority::high);
+        });
+    }
 }
 
 std::unique_ptr<AccessibilityHandler> AlertWindow::createAccessibilityHandler()
