@@ -118,10 +118,11 @@ void TooltipWindow::displayTip (Point<int> screenPos, const String& tip)
 
         toFront (false);
 
-        setTitle (tip);
-
         if (auto* handler = getAccessibilityHandler())
+        {
+            setHelpText (tip);
             handler->grabFocus();
+        }
     }
 }
 
