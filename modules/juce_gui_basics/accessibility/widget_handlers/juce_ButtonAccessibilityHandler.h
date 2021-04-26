@@ -56,7 +56,15 @@ public:
         return state;
     }
 
-    String getTitle() const override  { return button.getButtonText(); }
+    String getTitle() const override
+    {
+        auto buttonText = button.getButtonText();
+
+        if (buttonText.isNotEmpty())
+            return buttonText;
+
+        return AccessibilityHandler::getTitle();
+    }
 
 private:
     static AccessibilityRole getButtonRole (const Button& b)
