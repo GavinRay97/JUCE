@@ -44,7 +44,7 @@ public:
     String getTitle() const override
     {
         return codeEditorComponent.isReadOnly() ? codeEditorComponent.document.getAllContent()
-                                                : codeEditorComponent.getName();
+                                                : codeEditorComponent.getTitle();
     }
 
 private:
