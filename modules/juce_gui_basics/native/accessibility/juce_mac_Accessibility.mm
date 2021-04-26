@@ -392,7 +392,12 @@ private:
                 if (nameIsAccessibilityValue (handler->getRole()))
                     return @"";
 
-                return juceStringToNS (handler->getTitle());
+                auto title = handler->getTitle();
+
+                if (title.isEmpty() && handler->getComponent().isOnDesktop())
+                    title = getAccessibleApplicationOrPluginName();
+
+                return juceStringToNS (title);
             }
 
             return nil;

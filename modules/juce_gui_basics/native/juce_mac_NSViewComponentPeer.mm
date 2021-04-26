@@ -1740,6 +1740,15 @@ private:
         return getIvar<NSViewComponentPeer*> (self, "owner");
     }
 
+    static id getAccessibleChild (id self)
+    {
+        if (auto* owner = getOwner (self))
+            if (auto* handler = owner->getComponent().getAccessibilityHandler())
+                return (id) handler->getNativeImplementation();
+
+        return nil;
+    }
+
     static void mouseDown (id self, SEL s, NSEvent* ev)
     {
         if (JUCEApplicationBase::isStandaloneApp())
@@ -2063,15 +2072,6 @@ private:
     static void concludeDragOperation (id, SEL, id<NSDraggingInfo>) {}
 
     //==============================================================================
-    static id getAccessibleChild (id self)
-    {
-        if (auto* owner = getOwner (self))
-            if (auto* handler = owner->getComponent().getAccessibilityHandler())
-                return (id) handler->getNativeImplementation();
-
-        return nil;
-    }
-
     static BOOL getIsAccessibilityElement (id, SEL)
     {
         return NO;
@@ -2146,6 +2146,15 @@ private:
     static NSViewComponentPeer* getOwner (id self)
     {
         return getIvar<NSViewComponentPeer*> (self, "owner");
+    }
+
+    static id getAccessibleChild (id self)
+    {
+        if (auto* owner = getOwner (self))
+            if (auto* handler = owner->getComponent().getAccessibilityHandler())
+                return (id) handler->getNativeImplementation();
+
+        return nil;
     }
 
     //==============================================================================
@@ -2288,9 +2297,9 @@ private:
         return false;
     }
 
-    static NSString* getAccessibilityLabel (id, SEL)
+    static NSString* getAccessibilityLabel (id self, SEL)
     {
-        return juceStringToNS (getAccessibleApplicationOrPluginName());
+        return [getAccessibleChild (self) accessibilityLabel];
     }
 
     static id getAccessibilityWindow (id self, SEL)
@@ -2305,11 +2314,7 @@ private:
 
     static NSAccessibilityRole getAccessibilitySubrole (id self, SEL)
     {
-        if (auto* owner = getOwner (self))
-            if (auto* handler = owner->getComponent().getAccessibilityHandler())
-                return [(id) handler->getNativeImplementation() accessibilitySubrole];
-
-        return NSAccessibilityStandardWindowSubrole;
+        return [getAccessibleChild (self) accessibilitySubrole];
     }
 };
 
