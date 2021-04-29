@@ -314,7 +314,7 @@ namespace juce
 #include "accessibility/widget_handlers/juce_TextEditorAccessibilityHandler.h"
 #include "accessibility/widget_handlers/juce_TreeViewAccessibilityHandler.h"
 
-#if JUCE_LINUX
+#if JUCE_LINUX || JUCE_BSD
  #if JUCE_GUI_BASICS_INCLUDE_XHEADERS
   // If you're missing these headers, you need to install the libx11-dev package
   #include <X11/Xlib.h>

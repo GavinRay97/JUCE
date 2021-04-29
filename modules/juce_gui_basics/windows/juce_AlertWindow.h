@@ -461,6 +461,8 @@ protected:
     /** @internal */
     int getDesktopWindowStyleFlags() const override;
     /** @internal */
+    float getDesktopScaleFactor() const override { return desktopScale; }
+    /** @internal */
     std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
 
 private:
@@ -481,6 +483,7 @@ private:
     StringArray textboxNames, comboBoxNames;
     Component* const associatedComponent;
     bool escapeKeyCancels = true;
+    float desktopScale = 1.0f;
 
     void exitAlert (Button* button);
     void updateLayout (bool onlyIncreaseSize);

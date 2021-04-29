@@ -12,7 +12,7 @@ A short "Getting Started" guide can be found in the
 the relevant parts of the API for adding accessibility support to your JUCE
 applications and plug-ins.
 
-![alt text](https://assets.juce.com/juce/JUCE_banner.png "JUCE")
+![alt text](https://assets.juce.com/juce/JUCE_banner_github.png "JUCE")
 
 JUCE is an open-source cross-platform C++ application framework used for rapidly
 developing high quality desktop and mobile applications, including VST, AU (and AUv3),

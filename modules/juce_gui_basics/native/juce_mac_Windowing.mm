@@ -441,36 +441,30 @@ struct DisplaySettingsChangeCallback  : private DeletedAtShutdown
 {
     DisplaySettingsChangeCallback()
     {
-        CGDisplayRegisterReconfigurationCallback (displayReconfigurationCallback, nullptr);
+        CGDisplayRegisterReconfigurationCallback (displayReconfigurationCallback, this);
     }
 
     ~DisplaySettingsChangeCallback()
     {
-        CGDisplayRemoveReconfigurationCallback (displayReconfigurationCallback, nullptr);
+        CGDisplayRemoveReconfigurationCallback (displayReconfigurationCallback, this);
         clearSingletonInstance();
     }
 
-    static void displayReconfigurationCallback (CGDirectDisplayID, CGDisplayChangeSummaryFlags, void*)
+    static void displayReconfigurationCallback (CGDirectDisplayID, CGDisplayChangeSummaryFlags, void* userInfo)
     {
-        if (forceDisplayUpdate != nullptr)
-            forceDisplayUpdate();
+        if (auto* thisPtr = static_cast<DisplaySettingsChangeCallback*> (userInfo))
+            if (thisPtr->forceDisplayUpdate != nullptr)
+                thisPtr->forceDisplayUpdate();
     }
 
-    static std::function<void()> forceDisplayUpdate;
+    std::function<void()> forceDisplayUpdate;
 
-    JUCE_DECLARE_SINGLETON_SINGLETHREADED_MINIMAL (DisplaySettingsChangeCallback)
+    JUCE_DECLARE_SINGLETON (DisplaySettingsChangeCallback, false)
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DisplaySettingsChangeCallback)
 };
 
 JUCE_IMPLEMENT_SINGLETON (DisplaySettingsChangeCallback)
 
-std::function<void()> DisplaySettingsChangeCallback::forceDisplayUpdate = nullptr;
-
-static Rectangle<int> convertDisplayRect (NSRect r, CGFloat mainScreenBottom)
-{
-    r.origin.y = mainScreenBottom - (r.origin.y + r.size.height);
-    return convertToRectInt (r);
-}
 
 static Displays::Display getDisplayFromScreen (NSScreen* s, CGFloat& mainScreenBottom, const float masterScale)
 {
@@ -481,8 +475,8 @@ static Displays::Display getDisplayFromScreen (NSScreen* s, CGFloat& mainScreenB
     if (d.isMain)
         mainScreenBottom = [s frame].size.height;
 
-    d.userArea  = convertDisplayRect ([s visibleFrame], mainScreenBottom) / masterScale;
-    d.totalArea = convertDisplayRect ([s frame], mainScreenBottom) / masterScale;
+    d.userArea  = convertToRectInt ([s visibleFrame]) / masterScale;
+    d.totalArea = convertToRectInt ([s frame]) / masterScale;
     d.scale = masterScale;
 
     if ([s respondsToSelector: @selector (backingScaleFactor)])
@@ -498,10 +492,8 @@ void Displays::findDisplays (const float masterScale)
 {
     JUCE_AUTORELEASEPOOL
     {
-        auto& settingsChangeCallback = *DisplaySettingsChangeCallback::getInstance();
-
-        if (settingsChangeCallback.forceDisplayUpdate == nullptr)
-            settingsChangeCallback.forceDisplayUpdate = [this] { refresh(); };
+        if (DisplaySettingsChangeCallback::getInstanceWithoutCreating() == nullptr)
+            DisplaySettingsChangeCallback::getInstance()->forceDisplayUpdate = [this] { refresh(); };
 
         CGFloat mainScreenBottom = 0;
 

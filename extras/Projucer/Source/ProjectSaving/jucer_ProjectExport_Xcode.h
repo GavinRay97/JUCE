@@ -133,6 +133,7 @@ public:
         : ProjectExporter (p, t),
           xcodeCanUseDwarf (true),
           iOS (isIOS),
+          applicationCategoryValue                     (settings, Ids::applicationCategory,                     getUndoManager(), ""),
           customPListValue                             (settings, Ids::customPList,                             getUndoManager()),
           pListPrefixHeaderValue                       (settings, Ids::pListPrefixHeader,                       getUndoManager()),
           pListPreprocessValue                         (settings, Ids::pListPreprocess,                         getUndoManager()),
@@ -209,6 +210,8 @@ public:
     }
 
     //==============================================================================
+    String getApplicationCategoryString() const             { return applicationCategoryValue.get(); }
+
     String getPListToMergeString() const                    { return customPListValue.get(); }
     String getPListPrefixHeaderString() const               { return pListPrefixHeaderValue.get(); }
     bool isPListPreprocessEnabled() const                   { return pListPreprocessValue.get(); }
@@ -304,6 +307,11 @@ public:
     bool isLinux() const override                           { return false; }
     bool isOSX() const override                             { return ! iOS; }
     bool isiOS() const override                             { return iOS; }
+
+    Identifier getExporterIdentifier() const override
+    {
+        return iOS ? getValueTreeTypeNameiOS() : getValueTreeTypeNameMac();
+    }
 
     bool supportsPrecompiledHeaders() const override        { return true; }
 
@@ -410,6 +418,70 @@ public:
 
         if (isOSX())
         {
+            std::vector<std::pair<String, String>> appCategories
+            {
+                { "None",                 "" },
+                { "Business",             "business" },
+                { "Developer Tools",      "developer-tools" },
+                { "Education",            "education" },
+                { "Entertainment",        "entertainment" },
+                { "Finace",               "finance" },
+                { "Games",                "games" },
+                { "Games - Action",       "action-games" },
+                { "Games - Adventure",    "adventure-games" },
+                { "Games - Arcade",       "arcade-games" },
+                { "Games - Board",        "board-games" },
+                { "Games - Card",         "card-games" },
+                { "Games - Casino",       "casino-games" },
+                { "Games - Dice",         "dice-games" },
+                { "Games - Educational",  "educational-games" },
+                { "Games - Family",       "family-games" },
+                { "Games - Kids",         "kids-games" },
+                { "Games - Music",        "music-games" },
+                { "Games - Puzzle",       "puzzle-games" },
+                { "Games - Racing",       "racing-games" },
+                { "Games - Role Playing", "role-playing-games" },
+                { "Games - Simulation",   "simulation-games" },
+                { "Games - Sports",       "sports-games" },
+                { "Games - Strategy",     "strategy-games" },
+                { "Games - Trivia",       "trivia-games" },
+                { "Games - Word",         "word-games" },
+                { "Graphics Design",      "graphics-design" },
+                { "Healthcare & Fitness", "healthcare-fitness" },
+                { "Lifestyle",            "lifestyle" },
+                { "Medial",               "medical" },
+                { "Music",                "music" },
+                { "News",                 "news" },
+                { "Photography",          "photography" },
+                { "Productivity",         "productivity" },
+                { "Reference",            "reference" },
+                { "Social Networking",    "social-networking" },
+                { "Sports",               "sports" },
+                { "Travel",               "travel" },
+                { "Utilities",            "utilities" },
+                { "Video",                "video" },
+                { "Weather" ,             "weather" }
+            };
+
+            StringArray appCategoryKeys;
+            Array<var> appCategoryValues;
+
+            for (auto& opt : appCategories)
+            {
+                appCategoryKeys.add (opt.first);
+
+                if (opt.second.isNotEmpty())
+                    appCategoryValues.add ("public.app-category." + opt.second);
+                else
+                    appCategoryValues.add ("");
+            }
+
+            props.add (new ChoicePropertyComponent (applicationCategoryValue,
+                                                    "App Category",
+                                                    appCategoryKeys,
+                                                    appCategoryValues),
+                       "The application category.");
+
             props.add (new MultiChoicePropertyComponent (validArchsValue, "Valid Architectures", getAllArchs(), getAllArchs()),
                        "The full set of architectures which this project may target. "
                        "Each configuration will build for the intersection of this property, and the per-configuration macOS Architecture property");
@@ -1734,6 +1806,7 @@ public:
             options.type                             = type;
             options.executableName                   = "${EXECUTABLE_NAME}";
             options.bundleIdentifier                 = getBundleIdentifier();
+            options.applicationCategory              = owner.getApplicationCategoryString();
             options.plistToMerge                     = owner.getPListToMergeString();
             options.iOS                              = owner.iOS;
             options.microphonePermissionEnabled      = owner.isMicrophonePermissionEnabled();
@@ -1966,8 +2039,8 @@ private:
     //==============================================================================
     static String expandPath (const String& path)
     {
-        if (! File::isAbsolutePath (path))  return "$(SRCROOT)/" + path;
-        if (path.startsWithChar ('~'))      return "$(HOME)" + path.substring (1);
+        if (! build_tools::isAbsolutePath (path))  return "$(SRCROOT)/" + path;
+        if (path.startsWithChar ('~'))             return "$(HOME)" + path.substring (1);
 
         return path;
     }
@@ -1989,8 +2062,6 @@ private:
         addSubprojects();
 
         addFrameworks();
-        addCustomFrameworks();
-        addEmbeddedFrameworks();
 
         addCustomResourceFolders();
         addPlistFileReferences();
@@ -2477,6 +2548,24 @@ private:
         return s;
     }
 
+    template<typename AddFrameworkFn>
+    void addFrameworkList (const String& frameworksString, AddFrameworkFn&& addFrameworkFn) const
+    {
+        auto frameworks = StringArray::fromTokens (frameworksString, "\n\r", "\"'");
+        frameworks.trim();
+
+        for (auto& framework : frameworks)
+        {
+            auto frameworkID = addFrameworkFn (framework);
+
+            for (auto& target : targets)
+            {
+                target->frameworkIDs.add (frameworkID);
+                target->frameworkNames.add (framework);
+            }
+        }
+    }
+
     void addFrameworks() const
     {
         if (! projectType.isStaticLibrary())
@@ -2484,14 +2573,16 @@ private:
             if (isInAppPurchasesEnabled())
                 xcodeFrameworks.addIfNotAlreadyThere ("StoreKit");
 
-            if (iOS && isPushNotificationsEnabled())
-                xcodeFrameworks.addIfNotAlreadyThere ("UserNotifications");
-
-            if (iOS
-                && project.getEnabledModules().isModuleEnabled ("juce_video")
-                && project.isConfigFlagEnabled ("JUCE_USE_CAMERA", false))
+            if (iOS)
             {
-                xcodeFrameworks.addIfNotAlreadyThere ("ImageIO");
+                if (isPushNotificationsEnabled())
+                    xcodeFrameworks.addIfNotAlreadyThere ("UserNotifications");
+
+                if (project.getEnabledModules().isModuleEnabled ("juce_video")
+                    && project.isConfigFlagEnabled ("JUCE_USE_CAMERA", false))
+                {
+                    xcodeFrameworks.addIfNotAlreadyThere ("ImageIO");
+                }
             }
 
             xcodeFrameworks.addTokens (getExtraFrameworksString(), ",;", "\"'");
@@ -2534,43 +2625,18 @@ private:
                 }
             }
         }
-    }
 
-    void addCustomFrameworks() const
-    {
-        StringArray customFrameworks;
-        customFrameworks.addTokens (getExtraCustomFrameworksString(), true);
-        customFrameworks.trim();
+        addFrameworkList (getExtraCustomFrameworksString(),
+                          [this] (const String& framework) { return addCustomFramework (framework); });
 
-        for (auto& framework : customFrameworks)
-        {
-            auto frameworkID = addCustomFramework (framework);
+        addFrameworkList (getEmbeddedFrameworksString(),
+                          [this] (const String& framework)
+                          {
+                              auto frameworkId = addEmbeddedFramework (framework);
+                              embeddedFrameworkIDs.add (frameworkId);
 
-            for (auto& target : targets)
-            {
-                target->frameworkIDs.add (frameworkID);
-                target->frameworkNames.add (framework);
-            }
-        }
-    }
-
-    void addEmbeddedFrameworks() const
-    {
-        StringArray frameworks;
-        frameworks.addTokens (getEmbeddedFrameworksString(), true);
-        frameworks.trim();
-
-        for (auto& framework : frameworks)
-        {
-            auto frameworkID = addEmbeddedFramework (framework);
-            embeddedFrameworkIDs.add (frameworkID);
-
-            for (auto& target : targets)
-            {
-                target->frameworkIDs.add (frameworkID);
-                target->frameworkNames.add (framework);
-            }
-        }
+                              return frameworkId;
+                          });
 
         if (! embeddedFrameworkIDs.isEmpty())
             for (auto& target : targets)
@@ -2762,7 +2828,7 @@ private:
                     if (val.isEmpty() || (val.containsAnyOf (" \t;<>()=,&+-@~\r\n\\#%^`*")
                                             && ! (val.trimStart().startsWithChar ('(')
                                                     || val.trimStart().startsWithChar ('{'))))
-                        val = val.quoted();
+                        val = "\"" + val + "\"";
 
                     auto content = propertyName.toString() + " = " + val + ";";
 
@@ -2807,7 +2873,7 @@ private:
     String addFileOrFolderReference (const String& pathString, String sourceTree, String fileType) const
     {
         auto fileRefID = createFileRefID (pathString);
-        auto filename = File::createFileWithoutCheckingPath (pathString).getFileName();
+        auto filename = build_tools::RelativePath (pathString, build_tools::RelativePath::unknown).getFileName();
 
         ValueTree v (fileRefID + " /* " + filename + " */");
         v.setProperty ("isa", "PBXFileReference", nullptr);
@@ -2942,7 +3008,7 @@ private:
     String addBuildFile (const FileOptions& opts) const
     {
         auto fileID = createID (opts.path + "buildref");
-        auto filename = File::createFileWithoutCheckingPath (opts.path).getFileName();
+        auto filename = build_tools::RelativePath (opts.path, build_tools::RelativePath::unknown).getFileName();
 
         if (opts.compile)
         {
@@ -3079,7 +3145,7 @@ private:
         auto path = frameworkName;
         auto isRelativePath = path.startsWith ("../");
 
-        if (! File::isAbsolutePath (path) && ! isRelativePath)
+        if (! build_tools::isAbsolutePath (path) && ! isRelativePath)
             path = "System/Library/Frameworks/" + path;
 
         if (! path.endsWithIgnoreCase (".framework"))
@@ -3087,7 +3153,7 @@ private:
 
         auto fileRefID = createFileRefID (path);
 
-        addFileReference (((File::isAbsolutePath (frameworkName) || isRelativePath) ? "" : "${SDKROOT}/") + path);
+        addFileReference (((build_tools::isAbsolutePath (frameworkName) || isRelativePath) ? "" : "${SDKROOT}/") + path);
         frameworkFileIDs.add (fileRefID);
 
         return addBuildFile (FileOptions().withPath (path)
@@ -3113,7 +3179,7 @@ private:
     String addEmbeddedFramework (const String& path) const
     {
         auto fileRefID = createFileRefID (path);
-        auto filename = File::createFileWithoutCheckingPath (path).getFileName();
+        auto filename = build_tools::RelativePath (path, build_tools::RelativePath::unknown).getFileName();
 
         auto fileType = getFileType (path);
         addFileOrFolderReference (path, "<group>", fileType);
@@ -3483,7 +3549,8 @@ private:
 
     const bool iOS;
 
-    ValueWithDefault customPListValue, pListPrefixHeaderValue, pListPreprocessValue,
+    ValueWithDefault applicationCategoryValue,
+                     customPListValue, pListPrefixHeaderValue, pListPreprocessValue,
                      subprojectsValue,
                      validArchsValue,
                      extraFrameworksValue, frameworkSearchPathsValue, extraCustomFrameworksValue, embeddedFrameworksValue,
