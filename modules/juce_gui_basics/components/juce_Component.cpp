@@ -1701,9 +1701,6 @@ void Component::enterModalState (bool shouldTakeKeyboardFocus,
 
         if (shouldTakeKeyboardFocus)
             grabKeyboardFocus();
-
-        if (auto* handler = getAccessibilityHandler())
-            handler->grabFocus();
     }
     else
     {

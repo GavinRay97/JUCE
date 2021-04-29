@@ -87,7 +87,11 @@ void AlertWindow::setMessage (const String& message)
     if (text != newMessage)
     {
         text = newMessage;
-        accessibleMessageLabel.setText (getName() + ". " + text, NotificationType::dontSendNotification);
+
+        auto accessibleText = getName() + ". " + text;
+        accessibleMessageLabel.setText (accessibleText, NotificationType::dontSendNotification);
+        setDescription (accessibleText);
+
         updateLayout (true);
         repaint();
     }
@@ -711,20 +715,6 @@ bool AlertWindow::showNativeDialogBox (const String& title,
 #endif
 
 //==============================================================================
-void AlertWindow::visibilityChanged()
-{
-    if (isVisible())
-    {
-        auto announcementString = accessibleMessageLabel.getText();
-
-        MessageManager::callAsync ([announcementString]
-        {
-            AccessibilityHandler::postAnnouncement (announcementString,
-                                                    AccessibilityHandler::AnnouncementPriority::high);
-        });
-    }
-}
-
 std::unique_ptr<AccessibilityHandler> AlertWindow::createAccessibilityHandler()
 {
     return std::make_unique<AccessibilityHandler> (*this, AccessibilityRole::dialogWindow);

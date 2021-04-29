@@ -209,10 +209,27 @@ private:
                 comp.parentWindow.setCurrentlyHighlightedChild (&comp);
             };
 
-            return AccessibilityActions().addAction (AccessibilityActionType::focus,
-                                                     std::move (onFocus))
-                                         .addAction (AccessibilityActionType::press,
-                                                     [&handler] { handler.itemComponent.parentWindow.triggerCurrentlyHighlightedItem(); });
+            auto onPress = [&handler]
+            {
+                auto& comp = handler.itemComponent;
+
+                comp.parentWindow.setCurrentlyHighlightedChild (&comp);
+                comp.parentWindow.triggerCurrentlyHighlightedItem();
+            };
+
+            auto onToggle = [&handler, onFocus]
+            {
+                auto& comp = handler.itemComponent;
+
+                if (handler.getCurrentState().isSelected())
+                    comp.parentWindow.setCurrentlyHighlightedChild (nullptr);
+                else
+                    onFocus();
+            };
+
+            return AccessibilityActions().addAction (AccessibilityActionType::focus,  std::move (onFocus))
+                                         .addAction (AccessibilityActionType::press,  std::move (onPress))
+                                         .addAction (AccessibilityActionType::toggle, std::move (onToggle));
         }
 
         ItemComponent& itemComponent;
@@ -1186,11 +1203,15 @@ struct MenuWindow  : public Component
         struct MenuWindowAccessibilityHandler  : public AccessibilityHandler
         {
             explicit MenuWindowAccessibilityHandler (MenuWindow& window)
-                : AccessibilityHandler (window, AccessibilityRole::popupMenu)
+                : AccessibilityHandler (window, AccessibilityRole::popupMenu,
+                                        AccessibilityActions().addAction (AccessibilityActionType::focus, [&window]
+                                            {
+                                                if (window.currentChild != nullptr)
+                                                    if (auto* handler = window.currentChild->getAccessibilityHandler())
+                                                        handler->grabFocus();
+                                            }))
             {
             }
-
-            AccessibleState getCurrentState() const override  { return AccessibleState().withIgnored(); }
         };
 
         return std::make_unique<MenuWindowAccessibilityHandler> (*this);
@@ -2001,6 +2022,9 @@ int PopupMenu::showWithOptionalCallback (const Options& options,
 
         window->toFront (false);  // need to do this after making it modal, or it could
                                   // be stuck behind other comps that are already modal..
+
+        if (auto* handler = window->getAccessibilityHandler())
+            handler->grabFocus();
 
        #if JUCE_MODAL_LOOPS_PERMITTED
         if (userCallback == nullptr && canBeModal)

@@ -259,12 +259,12 @@ public:
     */
     void notifyAccessibilityEvent (AccessibilityEvent event) const;
 
-    /** A priority level which can help an accessibility client determine how to handle
+    /** A priority level that can help an accessibility client determine how to handle
         an announcement request.
 
-        Exactly what this controls is platform-specific but generally a low priority
+        Exactly what this controls is platform-specific, but generally a low priority
         announcement will be read when the screen reader is free, whereas a high priority
-        announcement will be read immediately, interrupting the current speech.
+        announcement will interrupt the current speech.
     */
     enum class AnnouncementPriority
     {
@@ -273,11 +273,10 @@ public:
         high
     };
 
-    /** Requests an announcement to be made to the user.
+    /** Posts an announcement to be made to the user.
 
-        The announcementString should be a localised string containing the announcement
-        to be read out and priority should be set to the appropriate priority level for the
-        announcement.
+        @param announcementString   a localised string containing the announcement to be read out
+        @param priority             the appropriate priority level for the announcement
     */
     static void postAnnouncement (const String& announcementString, AnnouncementPriority priority);
 
@@ -285,7 +284,7 @@ public:
     /** @internal */
     AccessibilityNativeHandle* getNativeImplementation() const;
     /** @internal */
-    const std::type_index& getTypeIndex() const  { return typeIndex; }
+    std::type_index getTypeIndex() const  { return typeIndex; }
 
 private:
     //==============================================================================

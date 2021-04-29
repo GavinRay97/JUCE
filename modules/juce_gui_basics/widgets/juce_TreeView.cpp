@@ -172,17 +172,25 @@ private:
                     tree->scrollToKeepItemVisible (&treeItem);
             };
 
-            auto onSelection = [&treeItem] (bool selected)
+            auto onPress = [&treeItem]
             {
-                treeItem.setSelected (selected, true);
+                if (auto* tree = treeItem.getOwnerView())
+                    tree->keyPressed (KeyPress (KeyPress::returnKey));
             };
 
-            auto actions = AccessibilityActions().addAction (AccessibilityActionType::focus,
-                                                             std::move (onFocus))
-                                                 .addAction (AccessibilityActionType::toggle,
-                                                             [&handler, onSelection] { onSelection (! handler.getCurrentState().isSelected()); })
-                                                 .addAction (AccessibilityActionType::press,
-                                                             [onSelection] { onSelection (true); });
+            auto onToggle = [&handler, &treeItem, onFocus]
+            {
+                auto isSelected = handler.getCurrentState().isSelected();
+
+                if (! isSelected)
+                    onFocus();
+
+                treeItem.setSelected (! isSelected, true);
+            };
+
+            auto actions = AccessibilityActions().addAction (AccessibilityActionType::focus, std::move (onFocus))
+                                                 .addAction (AccessibilityActionType::press, std::move (onPress))
+                                                 .addAction (AccessibilityActionType::toggle, std::move (onToggle));
 
             if (treeItem.mightContainSubItems())
                 actions = actions.addAction (AccessibilityActionType::showMenu,

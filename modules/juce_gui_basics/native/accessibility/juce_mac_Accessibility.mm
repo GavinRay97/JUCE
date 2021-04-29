@@ -94,6 +94,9 @@ private:
             addMethod (@selector (accessibilityHelp),                      getAccessibilityHelp,                  "@@:");
             addMethod (@selector (accessibilityValue),                     getAccessibilityValue,                 "@@:");
             addMethod (@selector (setAccessibilityValue:),                 setAccessibilityValue,                 "v@:@");
+            addMethod (@selector (accessibilitySelectedChildren),          getAccessibilitySelectedChildren,      "@@:");
+            addMethod (@selector (setAccessibilitySelectedChildren:),      setAccessibilitySelectedChildren,      "v@:@");
+            addMethod (@selector (accessibilityOrientation),               getAccessibilityOrientation,           "i@:@");
 
             addMethod (@selector (accessibilityInsertionPointLineNumber),  getAccessibilityInsertionPointLineNumber, "i@:");
             addMethod (@selector (accessibilitySharedCharacterRange),      getAccessibilitySharedCharacterRange,     @encode (NSRange), "@:");
@@ -274,6 +277,46 @@ private:
             return nil;
         }
 
+        static NSArray* getAccessibilitySelectedChildren (id self, SEL)
+        {
+            if (auto* handler = getHandler (self))
+            {
+                NSMutableArray* selected = [[NSMutableArray new] autorelease];
+
+                for (auto* child : handler->getChildren())
+                    if (child->getCurrentState().isSelected())
+                        [selected addObject: (id) child->getNativeImplementation()];
+
+                return selected;
+            }
+
+            return nil;
+        }
+
+        static void setAccessibilitySelectedChildren (id self, SEL, NSArray* selected)
+        {
+            if (auto* handler = getHandler (self))
+            {
+                for (auto* childHandler : handler->getChildren())
+                {
+                    auto isSelected = [selected containsObject: (id) childHandler->getNativeImplementation()];
+
+                    if (childHandler->getCurrentState().isSelected() != isSelected)
+                        childHandler->getActions().invoke (AccessibilityActionType::toggle);
+                }
+            }
+        }
+
+        static NSAccessibilityOrientation getAccessibilityOrientation (id self, SEL)
+        {
+            if (auto* handler = getHandler (self))
+                return handler->getComponent().getBounds().toFloat().getAspectRatio() > 1.0f
+                           ? NSAccessibilityOrientationHorizontal
+                           : NSAccessibilityOrientationVertical;
+
+            return NSAccessibilityOrientationUnknown;
+        }
+
         static BOOL getIsAccessibilityFocused (id self, SEL)
         {
             return [[self accessibilityWindow] accessibilityFocusedUIElement] == self;
@@ -331,7 +374,7 @@ private:
                     case AccessibilityRole::hyperlink:    return NSAccessibilityLinkRole;
                     case AccessibilityRole::list:         return NSAccessibilityListRole;
                     case AccessibilityRole::listItem:     return NSAccessibilityRowRole;
-                    case AccessibilityRole::tree:         return NSAccessibilityOutlineRole;
+                    case AccessibilityRole::tree:         return NSAccessibilityListRole;
                     case AccessibilityRole::treeItem:     return NSAccessibilityRowRole;
                     case AccessibilityRole::progressBar:  return NSAccessibilityProgressIndicatorRole;
                     case AccessibilityRole::group:        return NSAccessibilityGroupRole;
@@ -893,6 +936,18 @@ private:
                         return handler->getActions().contains (AccessibilityActionType::showMenu);
                 }
 
+                if (selector == @selector (accessibilitySelectedChildren))
+                {
+                    const auto role = handler->getRole();
+
+                    return role == AccessibilityRole::list
+                        || role == AccessibilityRole::popupMenu
+                        || role == AccessibilityRole::tree;
+                }
+
+                if (selector == @selector (accessibilityOrientation))
+                    return handler->getRole() == AccessibilityRole::scrollBar;
+
                 return sendSuperclassMessage<BOOL> (self, @selector (isAccessibilitySelectorAllowed:), selector);
             }
 
@@ -966,14 +1021,10 @@ void AccessibilityHandler::notifyAccessibilityEvent (AccessibilityEvent eventTyp
     {
         id accessibilityElement = (id) getNativeImplementation();
 
-        NSDictionary* userInfo = [notification, accessibilityElement]
-        {
-            return (notification == NSAccessibilityLayoutChangedNotification
-                      ? @{ NSAccessibilityUIElementsKey: accessibilityElement }
-                      : nil);
-        }();
-
-        sendAccessibilityEvent (accessibilityElement, notification, userInfo);
+        sendAccessibilityEvent (accessibilityElement, notification,
+                                (notification == NSAccessibilityLayoutChangedNotification
+                                   ? @{ NSAccessibilityUIElementsKey: accessibilityElement }
+                                   : nil));
     }
 }
 

@@ -29,23 +29,29 @@ namespace juce
 template<typename RowHandlerType, typename RowComponent>
 static AccessibilityActions getListRowAccessibilityActions (RowHandlerType& handler, RowComponent& rowComponent)
 {
-    auto onSelection = [&rowComponent] (bool rowIsSelected)
+    auto onFocus = [&rowComponent]
     {
-        auto& listBox = rowComponent.owner;
-        auto& row = rowComponent.row;
-
-        if (rowIsSelected)
-            listBox.selectRow (row);
-        else
-            listBox.deselectRow (row);
+        rowComponent.owner.scrollToEnsureRowIsOnscreen (rowComponent.row);
+        rowComponent.owner.selectRow (rowComponent.row);
     };
 
-    return AccessibilityActions().addAction (AccessibilityActionType::focus,
-                                             [&rowComponent] { rowComponent.owner.scrollToEnsureRowIsOnscreen (rowComponent.row); })
-                                 .addAction (AccessibilityActionType::toggle,
-                                             [&handler, onSelection] { onSelection (! handler.getCurrentState().isSelected()); })
-                                 .addAction (AccessibilityActionType::press,
-                                             [onSelection] { onSelection (true); });
+    auto onPress = [&rowComponent, onFocus]
+    {
+        onFocus();
+        rowComponent.owner.keyPressed (KeyPress (KeyPress::returnKey));
+    };
+
+    auto onToggle = [&handler, &rowComponent, onFocus]
+    {
+        if (handler.getCurrentState().isSelected())
+            rowComponent.owner.deselectRow (rowComponent.row);
+        else
+            onFocus();
+    };
+
+    return AccessibilityActions().addAction (AccessibilityActionType::focus,  std::move (onFocus))
+                                 .addAction (AccessibilityActionType::press,  std::move (onPress))
+                                 .addAction (AccessibilityActionType::toggle, std::move (onToggle));
 }
 
 class ListBox::RowComponent  : public Component,
@@ -76,9 +82,8 @@ public:
             {
                 isSelected = nowSelected;
 
-                if (isSelected)
-                    if (auto* handler = getAccessibilityHandler())
-                        handler->grabFocus();
+                if (auto* handler = getAccessibilityHandler())
+                    isSelected ? handler->grabFocus() : handler->giveAwayFocus();
             }
         }
 

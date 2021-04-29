@@ -61,8 +61,8 @@ public:
             return S_OK;
         }
 
-        if (! handler.getCurrentState().isSelected())
-            handler.getActions().invoke (AccessibilityActionType::focus);
+        handler.getActions().invoke (AccessibilityActionType::toggle);
+        handler.getActions().invoke (AccessibilityActionType::press);
 
         return S_OK;
     }
@@ -99,7 +99,7 @@ public:
             const auto& handler = getHandler();
 
             if (handler.getCurrentState().isSelected())
-                handler.giveAwayFocus();
+                getHandler().getActions().invoke (AccessibilityActionType::toggle);
         }
 
         return S_OK;
@@ -119,7 +119,7 @@ public:
             if (auto* parent = handler.getParent())
                 for (auto* child : parent->getChildren())
                     if (child != &handler && child->getCurrentState().isSelected())
-                        child->giveAwayFocus();
+                        child->getActions().invoke (AccessibilityActionType::toggle);
         }
 
         return S_OK;

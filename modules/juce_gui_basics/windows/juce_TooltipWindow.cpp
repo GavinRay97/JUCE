@@ -120,7 +120,7 @@ void TooltipWindow::displayTip (Point<int> screenPos, const String& tip)
 
         if (auto* handler = getAccessibilityHandler())
         {
-            setHelpText (tip);
+            setDescription (tip);
             handler->grabFocus();
         }
     }

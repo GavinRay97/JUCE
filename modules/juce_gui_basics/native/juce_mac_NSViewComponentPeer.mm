@@ -1648,12 +1648,34 @@ const SEL NSViewComponentPeer::becomeKeySelector      = @selector (becomeKey:);
 JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 //==============================================================================
-struct JuceNSViewClass   : public ObjCClass<NSView>
+template <typename Base>
+struct NSViewComponentPeerWrapper  : public Base
 {
-    JuceNSViewClass()  : ObjCClass<NSView> ("JUCEView_")
+    explicit NSViewComponentPeerWrapper (const char* baseName)
+        : Base (baseName)
     {
-        addIvar<NSViewComponentPeer*> ("owner");
+        Base::template addIvar<NSViewComponentPeer*> ("owner");
+    }
 
+    static NSViewComponentPeer* getOwner (id self)
+    {
+        return Base::template getIvar<NSViewComponentPeer*> (self, "owner");
+    }
+
+    static id getAccessibleChild (id self)
+    {
+        if (auto* owner = getOwner (self))
+            if (auto* handler = owner->getComponent().getAccessibilityHandler())
+                return (id) handler->getNativeImplementation();
+
+        return nil;
+    }
+};
+
+struct JuceNSViewClass   : public NSViewComponentPeerWrapper<ObjCClass<NSView>>
+{
+    JuceNSViewClass()  : NSViewComponentPeerWrapper ("JUCEView_")
+    {
         addMethod (@selector (isOpaque),                      isOpaque,                          "c@:");
         addMethod (@selector (drawRect:),                     drawRect,                          "v@:", @encode (NSRect));
         addMethod (@selector (mouseDown:),                    mouseDown,                         "v@:@");
@@ -1735,20 +1757,6 @@ struct JuceNSViewClass   : public ObjCClass<NSView>
     }
 
 private:
-    static NSViewComponentPeer* getOwner (id self)
-    {
-        return getIvar<NSViewComponentPeer*> (self, "owner");
-    }
-
-    static id getAccessibleChild (id self)
-    {
-        if (auto* owner = getOwner (self))
-            if (auto* handler = owner->getComponent().getAccessibilityHandler())
-                return (id) handler->getNativeImplementation();
-
-        return nil;
-    }
-
     static void mouseDown (id self, SEL s, NSEvent* ev)
     {
         if (JUCEApplicationBase::isStandaloneApp())
@@ -2107,12 +2115,10 @@ private:
 };
 
 //==============================================================================
-struct JuceNSWindowClass   : public ObjCClass<NSWindow>
+struct JuceNSWindowClass   : public NSViewComponentPeerWrapper<ObjCClass<NSWindow>>
 {
-    JuceNSWindowClass()  : ObjCClass<NSWindow> ("JUCEWindow_")
+    JuceNSWindowClass()  : NSViewComponentPeerWrapper ("JUCEWindow_")
     {
-        addIvar<NSViewComponentPeer*> ("owner");
-
         addMethod (@selector (canBecomeKeyWindow),                  canBecomeKeyWindow,        "c@:");
         addMethod (@selector (canBecomeMainWindow),                 canBecomeMainWindow,       "c@:");
         addMethod (@selector (becomeKeyWindow),                     becomeKeyWindow,           "v@:");
@@ -2143,20 +2149,6 @@ struct JuceNSWindowClass   : public ObjCClass<NSWindow>
     }
 
 private:
-    static NSViewComponentPeer* getOwner (id self)
-    {
-        return getIvar<NSViewComponentPeer*> (self, "owner");
-    }
-
-    static id getAccessibleChild (id self)
-    {
-        if (auto* owner = getOwner (self))
-            if (auto* handler = owner->getComponent().getAccessibilityHandler())
-                return (id) handler->getNativeImplementation();
-
-        return nil;
-    }
-
     //==============================================================================
     static BOOL isFlipped (id, SEL) { return true; }
 

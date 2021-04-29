@@ -200,15 +200,20 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
                 }
                 case UIA_SelectionPatternId:
                 {
-                    if (role == AccessibilityRole::list || role == AccessibilityRole::popupMenu)
+                    if (role == AccessibilityRole::list
+                        || role == AccessibilityRole::popupMenu
+                        || role == AccessibilityRole::tree)
+                    {
                         return new UIASelectionProvider (this);
+                    }
 
                     break;
                 }
                 case UIA_SelectionItemPatternId:
                 {
-                    if (((role == AccessibilityRole::listItem || role == AccessibilityRole::menuItem)
-                        && accessibilityHandler.getCurrentState().isSelectable())
+                    auto state = accessibilityHandler.getCurrentState();
+
+                    if (state.isSelectable() || state.isMultiSelectable()
                         || role == AccessibilityRole::radioButton)
                     {
                         return new UIASelectionItemProvider (this);
@@ -536,6 +541,9 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetFocus (IRawElementProviderFragment*
 //==============================================================================
 String AccessibilityNativeHandle::getElementName() const
 {
+    if (accessibilityHandler.getRole() == AccessibilityRole::tooltip)
+        return accessibilityHandler.getDescription();
+
     auto name = accessibilityHandler.getTitle();
 
     if (name.isEmpty() && isFragmentRoot())

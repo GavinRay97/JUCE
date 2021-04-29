@@ -73,7 +73,7 @@ public:
     /** Returns the name of this component.
         @see setName
     */
-    const String& getName() const noexcept                  { return componentName; }
+    String getName() const noexcept                  { return componentName; }
 
     /** Sets the name of this component.
 
@@ -87,7 +87,7 @@ public:
     /** Returns the ID string that was set by setComponentID().
         @see setComponentID, findChildWithID
     */
-    const String& getComponentID() const noexcept           { return componentID; }
+    String getComponentID() const noexcept           { return componentID; }
 
     /** Sets the component's ID string.
         You can retrieve the ID using getComponentID().
@@ -2310,7 +2310,7 @@ public:
 
         @see setTitle
     */
-    const String& getTitle() const noexcept  { return componentTitle; }
+    String getTitle() const noexcept  { return componentTitle; }
 
     /** Sets the title for this component.
 
@@ -2326,7 +2326,7 @@ public:
 
         @see setDescription
     */
-    const String& getDescription() const noexcept  { return componentDescription; }
+    String getDescription() const noexcept  { return componentDescription; }
 
     /** Sets the description for this component.
 
@@ -2342,7 +2342,7 @@ public:
 
         @see setHelpText
     */
-    const String& getHelpText() const noexcept    { return componentHelpText; }
+    String getHelpText() const noexcept    { return componentHelpText; }
 
     /** Sets the help text for this component.
 
